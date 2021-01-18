@@ -1,55 +1,79 @@
-# This repository is no longer maintained original repo https://github.com/Gr4ffy/lede-cups.git
+# samba4 with CUPS support for OpenWRT
+Note: This is mostly just a reference of how I did it. Feel free to send pull requests with improvements.
 
-# How to install Cups on OpenWrt/LEDE
-https://github.com/TheMMcOfficial/cups-for-openwrt
+## Building and installation
+```sh
+# Download the OpenWRT SDK
+# (you may need to select a different one, matching your device - the remaining steps are the same for all of them)
+wget https://downloads.openwrt.org/releases/19.07.5/targets/ath79/generic/openwrt-sdk-19.07.5-ath79-generic_gcc-7.5.0_musl.Linux-x86_64.tar.xz
+tar xvf openwrt-sdk-19.07.5-ath79-generic_gcc-7.5.0_musl.Linux-x86_64.tar.xz
+cd openwrt-sdk-19.07.5-ath79-generic_gcc-7.5.0_musl.Linux-x86_64.tar.xz
 
-# How to compile the Packages
-```
-git clone https://github.com/lede-project/source
+# Add the package feed
+echo "src-git samba4_with_cups https://github.com/krzys-h/openwrt-samba4_with_cups.git" >> feeds.conf.default
+# Alternatively, for a local directory:
+echo "src-link samba4_with_cups /absolute/path/to/samba4_with_cups" >> feeds.conf.default
 
-cd source
+# TODO: You have to use the local directory variant and patch the absolute path to python3 makefile in samba4/Makefile ... i can't get the path to work otherwise due to symlinks...
 
-echo "src-git cups https://github.com/TheMMcOfficial/lede-cups.git" >> feeds.conf.default
-
+# Update the package index, making sure that we use our version of samba4 rather than the builtin one
+# I'm not sure which one would be chosen otherwise
+# (note: cups is not packaged in the default repositories at all, so we don't have to worry about it)
 ./scripts/feeds update -a
-
 ./scripts/feeds install -a
+./scripts/feeds uninstall samba4
+./scripts/feeds install -p samba4_with_cups samba4
 
-make menuconfig (set Network->Printing->cups as "M")
+# Enable the packages
+make menuconfig
+# In the UI:
+# Network > Printing > cups, set to M (module)
+# Network > samba4, set to M (module)
+# Select Save and then Exit
 
-make
+# Build
+# (this will take a while - it needs to build all dependencies as well)
+make -j9 package/cups/compile package/samba4/compile
 
-copy /source/bin/packages/[PLATFORM]/cups/*.ipk to machine & opkg install 
+# Upload to device
+scp bin/packages/mips_24kc/packages/libcups_2.3.0-2_mips_24kc.ipk root@openwrt:.
+scp bin/packages/mips_24kc/samba4_with_cups/* root@openwrt:.
+
+# Install the packages
+ssh root@router
+opkg remove samba4-libs samba4-server  # if you have the normal version already installed
+opkg install libcups_2.3.0-2_mips_24kc.ipk
+opkg install cups_2.3.0-2_mips_24kc.ipk
+opkg install samba4-libs_4.11.17-1_mips_24kc.ipk
+opkg install samba4-server_4.11.17-1_mips_24kc.ipk
+
+# Create the spooler and driver dirs
+mkdir -p /srv/samba/print_drivers
+mkdir -p /srv/samba/print_spool
+chmod 0777 /srv/samba/print_spool
+
+# Go to http://openwrt:631/ and configure your printer. You'll probably want to use the default
+# raw queue as routers generally don't have enough processing power to render jobs
+# (and we don't install anything else anyway)
+
+# Remember to enable "printer sharing" if you intend to access it from CUPS clients
+
+# Restart smbd after configuring the printer in CUPS. Everything else should be already set up.
+/etc/init.d/samba4 restart
+
+# Don't forget to create an user, or reconfigure samba for anonymous access!
 ```
 
-In any case:
-## If you just want to attach your printer and use it from another PC using CUPS is most likely a bad idea
+# Configuring CUPS clients
+Configure the printer using the following path: `ipp://openwrt:631/printers/printer_name_on_the_server`
 
-## Included packages
-* libcups
-  * The cups core libraries required to run cups or any drivers
-* libcupsimage
-  * Library to allow CUPS to work with rasterized data
-* cups
-  * The common unix printing system (cups) daemon itself
-* cups-bsd
-  * Some BSD-type utilities (lprm,lpq,lpr,lpc)
-* cups-client
-  * Advanced client utilities (lp,cancel,cupstestppd,ipptool,lpoptions,lpstat,cupsaccept,cupsfilter,lpadmin,lpinfo,lpmove)
-* cups-filters-lite
-  * Some basic printer filters (commandtops,gziptoany,pstops,rastertoepson,rastertohp,rastertolabel,rastertopwg)
-* cups-ppdc
-  Compiler for PPDC files (deprecated)
-* cups-bjnp
-  * Filter for Canon printers using canon printers using USB over IP BJNP
-* cups-dymo
-  * Official drivers for Dymo label printers
-* cups-opfilter
-  * Filters to convert JPEG, PNG or TIFF images to raster data suitable for some printers
+You have to choose the driver manually.
 
-## Sources/Credits
-* Original: https://github.com/Gr4ffy/lede-cups
-* Via: https://github.com/lllrrr/lede-cups
+# Configuring Windows clients
+You should be able to navigate to `\\openwrt` and configure the printer using the normal Windows UI
 
-## Version of cups
-2.3.0
+You have to choose the driver manually. In theory it's possible to serve the driver using samba but I couldn't get it to work.
+
+# References
+https://github.com/TheMMcOfficial/lede-cups
+https://github.com/openwrt/packages/tree/openwrt-19.07/net/samba4
