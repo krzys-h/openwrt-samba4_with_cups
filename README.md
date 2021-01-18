@@ -36,7 +36,6 @@ make menuconfig
 make -j9 package/cups/compile package/samba4/compile
 
 # Upload to device
-scp bin/packages/mips_24kc/packages/libcups_2.3.0-2_mips_24kc.ipk root@openwrt:.
 scp bin/packages/mips_24kc/samba4_with_cups/* root@openwrt:.
 
 # Install the packages
