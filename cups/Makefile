@@ -99,7 +99,7 @@ define Package/libcups
 $(call Package/cups/Default)
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+zlib +libpthread +libpng +libjpeg +libgnutls
+  DEPENDS:=+zlib +libpthread +libpng +libjpeg +libgnutls +libavahi-client
   TITLE:=Common UNIX Printing System - Core library
 endef
 
@@ -135,7 +135,7 @@ define Build/Configure
 		--disable-acl \
 		--disable-dnssd \
 		--disable-dbus \
-		--disable-avahi \
+		--enable-avahi \
 		--disable-launchd \
 		--disable-ldap \
 		--disable-pam \
