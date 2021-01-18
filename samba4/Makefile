@@ -39,8 +39,8 @@ include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/version.mk
-include ../../lang/python/python3-host.mk
-include ../../lang/python/python3-package.mk
+include /mnt/ramdisk/openwrt-sdk-19.07.5-ath79-generic_gcc-7.5.0_musl.Linux-x86_64/feeds/packages/lang/python/python3-host.mk
+include /mnt/ramdisk/openwrt-sdk-19.07.5-ath79-generic_gcc-7.5.0_musl.Linux-x86_64/feeds/packages/lang/python/python3-package.mk
 
 define Package/samba4/Default
   SECTION:=net
@@ -60,7 +60,7 @@ endef
 define Package/samba4-libs
   $(call Package/samba4/Default)
   TITLE+= libs
-  DEPENDS:= +libtirpc +libreadline +libpopt +libcap +zlib +libgnutls +libtasn1 +libuuid +libopenssl +libpthread \
+  DEPENDS:= +libtirpc +libreadline +libpopt +libcap +zlib +libgnutls +libtasn1 +libuuid +libopenssl +libpthread +libcups \
 	+PACKAGE_libpam:libpam \
 	+SAMBA4_SERVER_VFS:attr \
 	+SAMBA4_SERVER_VFSX:libaio \
@@ -168,7 +168,7 @@ CONFIGURE_ARGS += \
 		--hostcc="$(HOSTCC)" \
 		--cross-compile \
 		--cross-answers=cross-answers.txt \
-		--disable-cups \
+		--enable-cups \
 		--disable-iprint \
 		--disable-cephfs \
 		--disable-fault-handling \
@@ -189,7 +189,7 @@ CONFIGURE_ARGS += \
 
 HOST_CONFIGURE_ARGS += \
 		--hostcc="$(HOSTCC)" \
-		--disable-cups \
+		--enable-cups \
 		--disable-iprint \
 		--disable-cephfs \
 		--disable-fault-handling \

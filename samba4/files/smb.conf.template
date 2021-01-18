@@ -64,15 +64,15 @@
 	#blocking locks = No
 
 	## disable loading of all printcap printers by default (iprint, cups, lpstat)
-	load printers = No
-	printcap name = /dev/null
+	load printers = Yes
+	printcap name = CUPS
 
 	## Enabling this parameter will disable Samba's support for the SPOOLSS set of MS-RPC's.
-	disable spoolss = yes
+	disable spoolss = no
 
 	## This parameters controls how printer status information is interpreted on your system.
-	## (BSD, AIX, LPRNG, PLP, SYSV, HPUX, QNX, SOFTQ)
-	printing = bsd
+	## (BSD, AIX, LPRNG, PLP, SYSV, HPUX, QNX, SOFTQ, CUPS)
+	printing = cups
 
 	## Disable that nmbd is acting as a WINS server for unknow netbios names
 	#dns proxy = No
@@ -119,3 +119,28 @@
 	#force user = root
 	#inherit owner = windows and unix
 ################################################################
+
+[printers]
+   comment = All Printers
+   browseable = no
+   path = /srv/samba/print_spool
+   printable = yes
+   guest ok = no
+   read only = yes
+   create mask = 0700
+
+# Windows clients look for this share name as a source of downloadable
+# printer drivers
+[print$]
+   comment = Printer Drivers
+   path = /srv/samba/print_drivers
+   browseable = yes
+   read only = yes
+   guest ok = no
+# Uncomment to allow remote administration of Windows print drivers.
+# You may need to replace 'lpadmin' with the name of the group your
+# admin users are members of.
+# Please note that you also need to set appropriate Unix permissions
+# to the drivers directory for these users to have write rights in it
+#   write list = root @lpadmin
+
